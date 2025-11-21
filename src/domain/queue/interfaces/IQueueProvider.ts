@@ -13,7 +13,7 @@ export abstract class IQueueProvider {
   ): Promise<QueueMessage[]>;
   abstract acknowledge(queueName: string, receiptHandle: string): Promise<void>;
 
-  abstract abstractcreateQueue(queueName: string): Promise<string>;
+  abstract createQueue(queueName: string): Promise<string>;
   abstract deleteQueue(queueName: string): Promise<void>;
 
   abstract healthCheck(): Promise<boolean>;
