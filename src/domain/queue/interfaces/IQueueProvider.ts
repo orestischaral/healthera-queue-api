@@ -1,17 +1,20 @@
 import { QueueMessage } from '../entities/QueueMessage';
 
-export interface IQueueProvider {
+export abstract class IQueueProvider {
   readonly name: string;
 
-  connect(): Promise<void>;
-  disconnect(): Promise<void>;
+  abstract connect(): Promise<void>;
+  abstract disconnect(): Promise<void>;
 
-  publish(message: QueueMessage): Promise<string>;
-  receive(queueName: string, maxMessages?: number): Promise<QueueMessage[]>;
-  acknowledge(queueName: string, receiptHandle: string): Promise<void>;
+  abstract publish(message: QueueMessage): Promise<string>;
+  abstract receive(
+    queueName: string,
+    maxMessages?: number,
+  ): Promise<QueueMessage[]>;
+  abstract acknowledge(queueName: string, receiptHandle: string): Promise<void>;
 
-  createQueue(queueName: string): Promise<string>;
-  deleteQueue(queueName: string): Promise<void>;
+  abstract abstractcreateQueue(queueName: string): Promise<string>;
+  abstract deleteQueue(queueName: string): Promise<void>;
 
-  healthCheck(): Promise<boolean>;
+  abstract healthCheck(): Promise<boolean>;
 }
