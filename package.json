@@ -69,7 +69,7 @@
       "ts"
     ],
     "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
+    "testRegex": ".*\\.(unit|int|e2e)\\.test\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
@@ -77,6 +77,15 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@domain/(.*)$": "<rootDir>/domain/$1",
+      "^@application/(.*)$": "<rootDir>/application/$1",
+      "^@infrastructure/(.*)$": "<rootDir>/infrastructure/$1",
+      "^uuid$": "uuid"
+    },
+    "transformIgnorePatterns": [
+      "node_modules/(?!uuid)"
+    ]
   }
 }
