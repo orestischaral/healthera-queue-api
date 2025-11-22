@@ -3,6 +3,7 @@ import {
   Catch,
   ArgumentsHost,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { QueueNotFoundException } from '@domain/queue/exceptions/QueueNotFoundException';
@@ -10,6 +11,8 @@ import { MessagePublishFailedException } from '@domain/queue/exceptions/MessageP
 
 @Catch(QueueNotFoundException, MessagePublishFailedException)
 export class DomainExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(DomainExceptionFilter.name);
+
   catch(exception: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -21,6 +24,8 @@ export class DomainExceptionFilter implements ExceptionFilter {
     } else if (exception instanceof MessagePublishFailedException) {
       status = HttpStatus.BAD_REQUEST;
     }
+
+    this.logger.error(`${exception.name}: ${exception.message}`);
 
     response.status(status).json({
       statusCode: status,
