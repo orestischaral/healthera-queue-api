@@ -6,7 +6,7 @@ import { QueueMessage } from '@domain/queue/entities/QueueMessage';
 
 @Injectable()
 export class BullMqProvider extends IQueueProvider {
-  readonly name = ' ';
+  readonly name = 'bullmq';
   private queues: Map<string, Queue> = new Map();
   private connection: { host: string; port: number };
 
