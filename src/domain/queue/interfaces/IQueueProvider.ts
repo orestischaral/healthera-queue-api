@@ -15,6 +15,11 @@ export abstract class IQueueProvider {
 
   abstract createQueue(queueName: string): Promise<string>;
   abstract deleteQueue(queueName: string): Promise<void>;
+  abstract subscribeToQueue(
+    queueName: string,
+    handler: (message: QueueMessage) => Promise<void>,
+  ): Promise<void>;
 
+  abstract unsubscribeFromQueue(queueName: string): Promise<void>;
   abstract healthCheck(): Promise<boolean>;
 }

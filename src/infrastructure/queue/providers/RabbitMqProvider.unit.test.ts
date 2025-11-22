@@ -6,6 +6,9 @@ const mockChannel = {
   sendToQueue: jest.fn(),
   get: jest.fn(),
   ack: jest.fn(),
+  nack: jest.fn(),
+  consume: jest.fn(),
+  cancel: jest.fn(),
   assertQueue: jest.fn(),
   deleteQueue: jest.fn(),
   close: jest.fn(),
@@ -157,6 +160,97 @@ describe('RabbitMqProvider', () => {
       const result = await freshProvider.healthCheck();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('subscribeToQueue', () => {
+    it('should set up consumer callback', async () => {
+      const handler = jest.fn();
+      mockChannel.consume.mockResolvedValue('consumer-tag-123');
+
+      await provider.subscribeToQueue('test-queue', handler);
+
+      expect(mockChannel.consume).toHaveBeenCalledWith(
+        'test-queue',
+        expect.any(Function),
+        { noAck: false },
+      );
+    });
+
+    it('should throw if already subscribed to queue', async () => {
+      const handler = jest.fn();
+      mockChannel.consume.mockResolvedValue('consumer-tag-123');
+
+      await provider.subscribeToQueue('test-queue', handler);
+
+      await expect(
+        provider.subscribeToQueue('test-queue', handler),
+      ).rejects.toThrow('Consumer already subscribed to queue: test-queue');
+    });
+
+    it('should call handler when message arrives', async () => {
+      const handler = jest.fn().mockResolvedValue(undefined);
+      mockChannel.consume.mockResolvedValue('consumer-tag-123');
+
+      await provider.subscribeToQueue('test-queue', handler);
+
+      const callback = mockChannel.consume.mock.calls[0][1];
+      const mockMsg = {
+        content: Buffer.from(
+          JSON.stringify({ payload: 'test-data', attributes: { key: 'val' } }),
+        ),
+        properties: { messageId: 'msg-1' },
+        fields: { deliveryTag: 123 },
+      };
+
+      await callback(mockMsg);
+
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payload: 'test-data',
+          attributes: { key: 'val' },
+        }),
+      );
+      expect(mockChannel.ack).toHaveBeenCalledWith(mockMsg);
+    });
+
+    it('should nack message on handler error', async () => {
+      const handler = jest.fn().mockRejectedValue(new Error('Handler failed'));
+      mockChannel.consume.mockResolvedValue('consumer-tag-123');
+
+      await provider.subscribeToQueue('test-queue', handler);
+
+      const callback = mockChannel.consume.mock.calls[0][1];
+      const mockMsg = {
+        content: Buffer.from(JSON.stringify({ payload: 'test' })),
+        properties: { messageId: 'msg-1' },
+        fields: { deliveryTag: 123 },
+      };
+
+      await callback(mockMsg);
+
+      expect(mockChannel.nack).toHaveBeenCalledWith(mockMsg, false, true);
+    });
+  });
+
+  describe('unsubscribeFromQueue', () => {
+    it('should cancel consumer', async () => {
+      const handler = jest.fn();
+
+      await provider.subscribeToQueue('test-queue', handler);
+      await provider.unsubscribeFromQueue('test-queue');
+
+      // Just verify cancel was called once with any string argument
+      expect(mockChannel.cancel).toHaveBeenCalledTimes(1);
+      expect(mockChannel.cancel.mock.calls[0][0]).toContain(
+        'consumer-test-queue-',
+      );
+    });
+
+    it('should throw if no subscription exists', async () => {
+      await expect(
+        provider.unsubscribeFromQueue('non-existent'),
+      ).rejects.toThrow('No consumer subscribed to queue: non-existent');
     });
   });
 });

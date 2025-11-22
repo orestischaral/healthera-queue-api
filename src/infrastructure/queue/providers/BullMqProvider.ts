@@ -9,6 +9,7 @@ export class BullMqProvider extends IQueueProvider {
   readonly name = 'bullmq';
   private queues: Map<string, Queue> = new Map();
   private connection: { host: string; port: number };
+  private workers: Map<string, Worker> = new Map();
 
   constructor(private readonly config: ConfigService) {
     super();
@@ -26,6 +27,11 @@ export class BullMqProvider extends IQueueProvider {
   }
 
   async disconnect(): Promise<void> {
+    for (const worker of this.workers.values()) {
+      await worker.close();
+    }
+    this.workers.clear();
+
     for (const queue of this.queues.values()) {
       await queue.close();
     }
@@ -76,6 +82,45 @@ export class BullMqProvider extends IQueueProvider {
     if (job) {
       await job.remove();
     }
+  }
+
+  async subscribeToQueue(
+    queueName: string,
+    handler: (message: QueueMessage) => Promise<void>,
+  ): Promise<void> {
+    if (this.workers.has(queueName)) {
+      throw new Error(`Worker already subscribed to queue: ${queueName}`);
+    }
+
+    const worker = new Worker(
+      queueName,
+      async (job: Job) => {
+        const message = new QueueMessage(
+          job.id ?? '',
+          queueName,
+          job.data.payload,
+          job.data.attributes,
+          job.id,
+        );
+        await handler(message);
+      },
+      {
+        connection: this.connection,
+      },
+    );
+
+    this.workers.set(queueName, worker);
+  }
+
+  async unsubscribeFromQueue(queueName: string): Promise<void> {
+    const worker = this.workers.get(queueName);
+
+    if (!worker) {
+      throw new Error(`No worker subscribed to queue: ${queueName}`);
+    }
+
+    await worker.close();
+    this.workers.delete(queueName);
   }
 
   async createQueue(queueName: string): Promise<string> {

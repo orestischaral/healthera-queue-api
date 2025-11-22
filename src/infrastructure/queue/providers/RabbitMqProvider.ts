@@ -12,6 +12,7 @@ export class RabbitMqProvider extends IQueueProvider {
   private readonly url: string;
   private readonly retryAttempts: number;
   private readonly retryDelayMs: number;
+  private consumers: Map<string, string> = new Map();
 
   constructor(private readonly config: ConfigService) {
     super();
@@ -86,6 +87,54 @@ export class RabbitMqProvider extends IQueueProvider {
     channel.ack({
       fields: { deliveryTag: parseInt(receiptHandle, 10) },
     } as any);
+  }
+
+  async subscribeToQueue(
+    queueName: string,
+    handler: (message: QueueMessage) => Promise<void>,
+  ): Promise<void> {
+    const channel = await this.getChannel();
+
+    if (this.consumers.has(queueName)) {
+      throw new Error(`Consumer already subscribed to queue: ${queueName}`);
+    }
+    const consumerTag = `consumer-${queueName}-${Date.now()}`;
+
+    await channel.consume(
+      queueName,
+      async (msg) => {
+        if (msg) {
+          try {
+            const data = JSON.parse(msg.content.toString());
+            const message = new QueueMessage(
+              msg.properties.messageId || '',
+              queueName,
+              data.payload,
+              data.attributes,
+              msg.fields.deliveryTag.toString(),
+            );
+            await handler(message);
+            channel.ack(msg);
+          } catch (error) {
+            channel.nack(msg, false, true); // Requeue on error
+          }
+        }
+      },
+      { noAck: false },
+    );
+
+    this.consumers.set(queueName, consumerTag);
+  }
+  async unsubscribeFromQueue(queueName: string): Promise<void> {
+    const channel = await this.getChannel();
+    const consumerTag = this.consumers.get(queueName);
+
+    if (!consumerTag) {
+      throw new Error(`No consumer subscribed to queue: ${queueName}`);
+    }
+
+    await channel.cancel(consumerTag);
+    this.consumers.delete(queueName);
   }
 
   async createQueue(queueName: string): Promise<string> {

@@ -11,12 +11,16 @@ jest.mock('bullmq', () => {
     close: jest.fn(),
     client: Promise.resolve(),
   };
+  const mockWorker = {
+    close: jest.fn(),
+  };
   return {
     Queue: jest.fn(() => mockQueue),
+    Worker: jest.fn(() => mockWorker),
   };
 });
 
-import { Queue } from 'bullmq';
+import { Queue, Worker } from 'bullmq';
 
 describe('BullMqProvider', () => {
   let provider: BullMqProvider;
@@ -129,6 +133,49 @@ describe('BullMqProvider', () => {
       const result = await provider.healthCheck();
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('subscribeToQueue', () => {
+    it('should create worker and store it', async () => {
+      const handler = jest.fn();
+      await provider.subscribeToQueue('test-queue', handler);
+
+      expect(Worker).toHaveBeenCalledWith(
+        'test-queue',
+        expect.any(Function),
+        expect.objectContaining({
+          connection: { host: 'localhost', port: 6379 },
+        }),
+      );
+    });
+
+    it('should throw if already subscribed to queue', async () => {
+      const handler = jest.fn();
+      await provider.subscribeToQueue('test-queue', handler);
+
+      await expect(
+        provider.subscribeToQueue('test-queue', handler),
+      ).rejects.toThrow('Worker already subscribed to queue: test-queue');
+    });
+  });
+
+  describe('unsubscribeFromQueue', () => {
+    it('should close worker and remove from map', async () => {
+      const handler = jest.fn();
+
+      await provider.subscribeToQueue('test-queue', handler);
+      const mockWorker = (Worker as unknown as jest.Mock).mock.results[0]
+        ?.value;
+      await provider.unsubscribeFromQueue('test-queue');
+
+      expect(mockWorker.close).toHaveBeenCalled();
+    });
+
+    it('should throw if no subscription exists', async () => {
+      await expect(
+        provider.unsubscribeFromQueue('non-existent'),
+      ).rejects.toThrow('No worker subscribed to queue: non-existent');
     });
   });
 });
