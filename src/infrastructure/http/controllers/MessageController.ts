@@ -48,9 +48,10 @@ export class MessageController {
   async acknowledgeMessage(
     @Param('name') name: string,
     @Param('receiptHandle') receiptHandle: string,
-  ): Promise<void> {
+  ): Promise<{ acknowledged: boolean }> {
     await this.commandBus.execute(
       new AcknowledgeMessageCommand(name, receiptHandle),
     );
+    return { acknowledged: true };
   }
 }
