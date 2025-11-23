@@ -241,10 +241,14 @@ Claude AI worked in a pair programming session. Discussed alternatives on design
 
 **Phases:**
 
-1. **Planning Phase** - Created architectural plan based on clean architecture principles
-2. **Implementation Phase** - Built domain, application, and infrastructure layers
-3. **Refinement Phase** - Added event-driven notification system with CQRS integration
-4. **Documentation Phase** - Updated README with complete feature overview
+1. **Planning Phase** - Initially operated under `plan mode`. Created an implementation plan based on the architectural decisions
+2. **Implementation Phase** - Operated under `asks before edit`.
+
+- Provided boilerplate code
+- Provided explanation on NestJS concepts
+- Implemented test files
+
+4. **Documentation Phase** - Provided README with complete feature overview
 
 **Key Design Discussions:**
 
@@ -254,3 +258,9 @@ Claude AI worked in a pair programming session. Discussed alternatives on design
 - Interface vs. concrete class for dependency injection
 
 ---
+
+## 👤 Author
+
+#### Orestis Charalampakos
+
+Software Engineer
