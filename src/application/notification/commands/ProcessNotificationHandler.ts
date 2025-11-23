@@ -14,7 +14,7 @@ export class ProcessNotificationHandler
     const payload = message.payload as any;
 
     this.logger.log(
-      `Notification received in Queue: ${payload.queueName}, MessageId: ${payload.messageId}, Timestamp: ${payload.timestamp}`,
+      `Notification received in Queue: ${payload.queue}, MessageId: ${payload.messageId}, Timestamp: ${payload.timestamp}`,
     );
   }
 }

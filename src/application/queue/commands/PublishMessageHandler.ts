@@ -2,7 +2,7 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { QueueMessage } from '@domain/queue/entities/QueueMessage';
 import { IQueueProvider } from '@domain/queue/interfaces/IQueueProvider';
 import { PublishMessageCommand } from './PublishMessageCommand';
-import { INotificationService } from '@app/domain/notification/interfaces/INotificationService';
+import { INotificationService } from '@domain/notification/interfaces/INotificationService';
 
 @CommandHandler(PublishMessageCommand)
 export class PublishMessageHandler
