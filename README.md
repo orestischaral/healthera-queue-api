@@ -4,7 +4,7 @@ A NestJS API with **swappable queue implementations** (BullMQ/RabbitMQ). Switch 
 
 ## Features
 
-- **Swappable Providers** - BullMQ (Redis) or RabbitMQ via environment variable
+- **Swappable Providers** - BullMQ (Redis) or RabbitMQ or both via environment variable
 - **Clean Architecture** - Onion Architecture + DDD principles
 - **CQRS Pattern** - Clear separation of commands and queries
 - **Event-Driven Notifications** - Automatic notifications on message publish
@@ -30,9 +30,32 @@ docker-compose up
 ```bash
 # BullMQ (default)
 QUEUE_PROVIDER=bullmq npm run start:dev
+
 # RabbitMQ
 QUEUE_PROVIDER=rabbitmq npm run start:dev
+
+# Both providers simultaneously
+QUEUE_PROVIDER=both npm run start:dev
 ```
+
+## Queue Routing Configuration
+
+When using `QUEUE_PROVIDER=both`, specify per-queue routing via `QUEUE_ROUTING` environment variable (JSON format):
+
+```bash
+# All queues route to both providers
+QUEUE_ROUTING='{"*":"both"}'
+
+# Specific queues to specific providers
+QUEUE_ROUTING='{"orders":"bullmq","notifications":"rabbitmq","*":"bullmq"}'
+
+# Breakdown:
+# - "orders" queue → BullMQ only
+# - "notifications" queue → RabbitMQ only
+# - Any other queue → BullMQ (wildcard "*" fallback)
+```
+
+**Routing is exclusive per queue** - each queue name matches exactly one route configuration (specific name or wildcard "\*"), not additive.
 
 ## API Endpoints
 
@@ -163,15 +186,16 @@ src/
 
 ## Environment Variables
 
-| Variable                  | Description                      | Default                           |
-| ------------------------- | -------------------------------- | --------------------------------- |
-| `PORT`                    | HTTP port                        | 3000                              |
-| `QUEUE_PROVIDER`          | Provider: `bullmq` or `rabbitmq` | bullmq                            |
-| `REDIS_HOST`              | Redis hostname                   | localhost                         |
-| `REDIS_PORT`              | Redis port                       | 6379                              |
-| `RABBITMQ_URL`            | RabbitMQ connection URL          | amqp://guest:guest@localhost:5672 |
-| `RABBITMQ_RETRY_ATTEMPTS` | Connection retry attempts        | 5                                 |
-| `RABBITMQ_RETRY_DELAY_MS` | Retry delay in ms                | 1000                              |
+| Variable                  | Description                                | Default                           |
+| ------------------------- | ------------------------------------------ | --------------------------------- |
+| `PORT`                    | HTTP port                                  | 3000                              |
+| `QUEUE_PROVIDER`          | Provider: `bullmq`, `rabbitmq`, or `both`  | bullmq                            |
+| `QUEUE_ROUTING`           | Per-queue routing (JSON, used with `both`) | `{"*":"bullmq"}`                  |
+| `REDIS_HOST`              | Redis hostname                             | localhost                         |
+| `REDIS_PORT`              | Redis port                                 | 6379                              |
+| `RABBITMQ_URL`            | RabbitMQ connection URL                    | amqp://guest:guest@localhost:5672 |
+| `RABBITMQ_RETRY_ATTEMPTS` | Connection retry attempts                  | 5                                 |
+| `RABBITMQ_RETRY_DELAY_MS` | Retry delay in ms                          | 1000                              |
 
 ## Design Decisions
 
@@ -213,7 +237,13 @@ src/
 - **Event-Driven:** NotificationSubscriber - server-initiated at startup
 - **Use Case:** Both patterns coexist; choose based on requirements
 
-### 8. BullMQ over SQS
+### 8. Composite Pattern for Multi-Provider Support
+
+- **Why:** Support simultaneous operation of both BullMQ and RabbitMQ in production
+- **How:** CompositeQueueProvider wraps both providers and routes each queue to specific provider(s) based on `QUEUE_ROUTING`
+- **Result:** Different queues can use different providers (e.g., orders → BullMQ, notifications → RabbitMQ)
+
+### 9. BullMQ over SQS
 
 - **Why:**
   - Simpler local dev (just Redis container)
