@@ -11,6 +11,7 @@ import { CreateQueueHandler } from '@application/queue/commands/CreateQueueHandl
 import { DeleteQueueHandler } from '@application/queue/commands/DeleteQueueHandler';
 import { AcknowledgeMessageHandler } from '@application/queue/commands/AcknowledgeMessageHandler';
 import { ReceiveMessagesHandler } from '@application/queue/queries/ReceiveMessagesHandler';
+import { NotificationModule } from './infrastructure/notification/NotificationModule';
 
 const CommandHandlers = [
   PublishMessageHandler,
@@ -29,6 +30,7 @@ const QueryHandlers = [ReceiveMessagesHandler];
     }),
     CqrsModule,
     QueueModule.forRootAsync(),
+    NotificationModule,
   ],
   controllers: [QueueController, MessageController, HealthController],
   providers: [...CommandHandlers, ...QueryHandlers],
