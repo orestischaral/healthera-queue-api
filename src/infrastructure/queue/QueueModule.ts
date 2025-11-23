@@ -4,6 +4,7 @@ import { IQueueProvider } from '@domain/queue/interfaces/IQueueProvider';
 import { BullMqProvider } from './providers/BullMqProvider';
 import { RabbitMqProvider } from './providers/RabbitMqProvider';
 import { QueueProviderFactory } from './factories/QueueProviderFactory';
+import { QueueRouting } from './providers/CompositeQueueProvider';
 
 @Module({})
 export class QueueModule {
@@ -21,7 +22,9 @@ export class QueueModule {
             config: ConfigService,
           ) => {
             const providerType = config.get<string>('queueProvider', 'bullmq');
-            return factory.create(providerType);
+            const routing = config.get<QueueRouting>('queueRouting');
+
+            return factory.create(providerType, routing);
           },
           inject: [QueueProviderFactory, ConfigService],
         },
