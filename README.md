@@ -207,31 +207,19 @@ src/
 - **How:** Uses `OnModuleInit` to subscribe at startup, `OnModuleDestroy` for graceful shutdown
 - **Result:** Automatic, scalable notification system without polling
 
-### 7. NotificationModule Encapsulation
-
-- **Why:** Separate concerns, clear module boundaries, reusable pattern
-- **Contains:** NotificationService, ProcessNotificationHandler, NotificationSubscriber
-- **Exports:** Only INotificationService (public API)
-- **Result:** Can be imported by any module needing notifications
-
-### 8. Dual Consumption Patterns
+### 7. Dual Consumption Patterns
 
 - **Polling:** REST API `/queues/:name/messages` - client-initiated
 - **Event-Driven:** NotificationSubscriber - server-initiated at startup
 - **Use Case:** Both patterns coexist; choose based on requirements
 
-### 9. BullMQ over SQS
+### 8. BullMQ over SQS
 
 - **Why:**
   - Simpler local dev (just Redis container)
   - No emulator needed (SQS requires LocalStack)
   - Better NestJS integration
   - Extensible features (scheduling, priorities)
-
-### 10. Parametrized E2E Tests
-
-- **Why:** Ensures same API behavior regardless of provider
-- **Result:** Each test runs with both BullMQ and RabbitMQ
 
 ## Development Notes
 
