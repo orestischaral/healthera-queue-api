@@ -1,6 +1,7 @@
 import { QueueProviderFactory } from './QueueProviderFactory';
 import { BullMqProvider } from '../providers/BullMqProvider';
 import { RabbitMqProvider } from '../providers/RabbitMqProvider';
+import { CompositeQueueProvider } from '../providers/CompositeQueueProvider';
 
 describe('QueueProviderFactory', () => {
   let factory: QueueProviderFactory;
@@ -29,6 +30,11 @@ describe('QueueProviderFactory', () => {
 
     expect(result).toBe(mockRabbitMqProvider);
     expect(result.name).toBe('rabbitmq');
+  });
+
+  it('should return CompositeQueueProvider when "both" is specified', () => {
+    const provider = factory.create('both');
+    expect(provider).toBeInstanceOf(CompositeQueueProvider);
   });
 
   it('should throw error for unknown provider type', () => {
