@@ -1,4 +1,4 @@
-# Healthera Queue API
+# Composite Queue API
 
 A NestJS API with **swappable queue implementations** (BullMQ/RabbitMQ). Switch between providers without code changes—just change an environment variable.
 
